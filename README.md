@@ -14,7 +14,7 @@ Universidad de La Guajira.
 
 - Python 3.10 o superior
 - Django (versión fijada en `requirements.txt`; no hay otras dependencias)
-- Base de datos SQLite (incluida en el proyecto, no requiere instalación)
+- Base de datos SQLite (se crea con `migrate`, no requiere instalación)
 
 ## Instalación y ejecución
 
@@ -51,8 +51,9 @@ El repositorio no contiene contraseñas: cada persona crea su superusuario con
 **Autenticación y autorización → Usuarios**, marcando "Es staff" y eligiendo su
 grupo.
 
-Superusuario de prueba para la revisión (escribir aquí el que se creó):
-usuario `________` · contraseña `________`
+Superusuario de prueba para la revisión: usuario `admin` (la contraseña se
+definió localmente y no se publica por seguridad; si clonas el repo, crea el
+tuyo con `createsuperuser`).
 
 ## Modelo de datos
 
