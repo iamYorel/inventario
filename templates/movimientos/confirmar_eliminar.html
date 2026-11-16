@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block titulo %}Eliminar movimiento #{{ movimiento.pk_mov_id }}{% endblock %}
+{% block contenido %}
+<div class="card border-danger mx-auto" style="max-width: 640px;">
+  <div class="card-header text-danger"><i class="bi bi-exclamation-triangle me-1"></i>Confirmar eliminación</div>
+  <div class="card-body">
+    <p class="mb-2">¿Seguro que quieres eliminar el movimiento <strong>#{{ movimiento.pk_mov_id }}</strong>
+      ({{ movimiento.get_mov_tipo_display|lower }} del {{ movimiento.mov_fecha|date:"d/m/Y" }})?</p>
+    <p class="text-muted small">Se borrarán también sus {{ num_lineas }} línea{{ num_lineas|pluralize }} y el stock de los lotes se recalculará.
+      Si es una entrada cuyo stock ya se consumió, el sistema no lo permitirá. Esta acción no se puede deshacer.</p>
+    <form method="post" class="d-flex gap-2">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger"><i class="bi bi-trash me-1"></i>Sí, eliminar</button>
+      <a href="{% url 'movimientos:detalle' movimiento.pk_mov_id %}" class="btn btn-outline-secondary">Cancelar</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

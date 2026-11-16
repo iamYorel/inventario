@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% block titulo %}Movimientos{% endblock %}
+{% block contenido %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+  <h1 class="h3 titulo-pagina mb-0">Movimientos de inventario</h1>
+  {% if perms.movimientos.add_movimiento %}
+  <a href="{% url 'movimientos:crear' %}" class="btn btn-accent"><i class="bi bi-plus-circle me-1"></i>Registrar movimiento</a>
+  {% endif %}
+</div>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label small mb-1" for="tipo">Tipo</label>
+        <select name="tipo" id="tipo" class="form-select">
+          <option value="">Todos</option>
+          <option value="entrada" {% if tipo == 'entrada' %}selected{% endif %}>Entradas</option>
+          <option value="salida" {% if tipo == 'salida' %}selected{% endif %}>Salidas</option>
+        </select>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label small mb-1" for="q">Buscar por número u observación</label>
+        <input type="text" name="q" id="q" value="{{ q }}" class="form-control" placeholder="Ej.: compra, 3">
+      </div>
+      <div class="col-md-3 d-flex gap-2">
+        <button class="btn btn-primary flex-fill" type="submit"><i class="bi bi-search me-1"></i>Filtrar</button>
+        <a class="btn btn-outline-secondary" href="{% url 'movimientos:lista' %}">Limpiar</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead>
+        <tr><th>N.º</th><th>Fecha</th><th>Tipo</th><th>Observación</th><th class="text-center">Líneas</th><th class="text-end">Acciones</th></tr>
+      </thead>
+      <tbody>
+      {% for m in movimientos %}
+        <tr>
+          <td class="fw-semibold">#{{ m.pk_mov_id }}</td>
+          <td>{{ m.mov_fecha|date:"d/m/Y" }}</td>
+          <td><span class="badge {% if m.mov_tipo == 'entrada' %}badge-entrada{% else %}badge-salida{% endif %}">{{ m.get_mov_tipo_display }}</span></td>
+          <td>{{ m.mov_observacion|default:"—" }}</td>
+          <td class="text-center">{{ m.num_lineas }}</td>
+          <td class="text-end text-nowrap">
+            <a href="{% url 'movimientos:detalle' m.pk_mov_id %}" class="btn btn-sm btn-outline-primary" title="Ver detalle"><i class="bi bi-eye"></i></a>
+            {% if perms.movimientos.change_movimiento %}
+            <a href="{% url 'movimientos:editar' m.pk_mov_id %}" class="btn btn-sm btn-outline-secondary" title="Editar"><i class="bi bi-pencil"></i></a>
+            {% endif %}
+            {% if perms.movimientos.delete_movimiento %}
+            <a href="{% url 'movimientos:eliminar' m.pk_mov_id %}" class="btn btn-sm btn-outline-danger" title="Eliminar"><i class="bi bi-trash"></i></a>
+            {% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="6" class="text-center text-muted py-4">No hay movimientos con ese filtro.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if is_paginated %}
+  <div class="card-footer bg-white">
+    <nav aria-label="Paginación"><ul class="pagination pagination-sm mb-0 justify-content-center">
+      {% if page_obj.has_previous %}
+      <li class="page-item"><a class="page-link" href="?{% if querystring %}{{ querystring }}&{% endif %}page={{ page_obj.previous_page_number }}">Anterior</a></li>
+      {% endif %}
+      <li class="page-item disabled"><span class="page-link">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span></li>
+      {% if page_obj.has_next %}
+      <li class="page-item"><a class="page-link" href="?{% if querystring %}{{ querystring }}&{% endif %}page={{ page_obj.next_page_number }}">Siguiente</a></li>
+      {% endif %}
+    </ul></nav>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

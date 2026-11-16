@@ -1,7 +1,8 @@
 from decimal import Decimal
 
 from django.core.exceptions import ValidationError
-from django.db.models import Q, Sum
+from django.db.models import DecimalField, Q, Sum, Value
+from django.db.models.functions import Coalesce
 
 from .models import DetalleMovimiento
 
@@ -65,3 +66,21 @@ def verificar_stock_no_negativo(ids_lotes):
             raise ValidationError(
                 f'Stock insuficiente en {Lote.objects.get(pk=pk)}: '
                 f'la operación dejaría el stock en {stock}.')
+
+
+def lotes_con_stock():
+    """Lotes con el atributo `stock_calc` (entradas - salidas) calculado en
+    una sola consulta, para listados y selectores sin una consulta por lote."""
+    from lotes.models import Lote
+    campo = DecimalField(max_digits=12, decimal_places=2)
+    cero = Value(CERO, output_field=campo)
+    entradas = Coalesce(
+        Sum('detalles__det_cantidad',
+            filter=Q(detalles__fk_mov__mov_tipo='entrada')),
+        cero, output_field=campo)
+    salidas = Coalesce(
+        Sum('detalles__det_cantidad',
+            filter=Q(detalles__fk_mov__mov_tipo='salida')),
+        cero, output_field=campo)
+    return (Lote.objects.select_related('fk_art', 'fk_ubi__fk_alm')
+            .annotate(stock_calc=entradas - salidas))

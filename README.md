@@ -1,79 +1,120 @@
 # Sistema de Inventario Multialmacén
 
+## Descripción
+
 Sistema de información hecho con Django para controlar los productos que
 entran y salen de las bodegas de una empresa con varios almacenes. Registra
 artículos, lotes, el almacén y estante donde está cada lote, y cada movimiento
 de entrada o salida. **El stock no se guarda en ninguna columna: se calcula a
-partir de los movimientos.** Toda la información se administra desde Django
-Admin.
+partir de los movimientos.**
 
-Trabajo del Entregable del Segundo Corte — Ingeniería de Sistemas,
-Universidad de La Guajira.
+Está pensado para tres actores: **Administrador**, **Jefe de bodega** y
+**Bodeguero**. Los catálogos (almacenes, categorías, artículos, ubicaciones y
+lotes) se administran desde el panel de administración de Django; el proceso
+principal, **registrar movimientos de inventario**, tiene su propia interfaz web.
 
-## Requisitos
+## Integrantes
 
-- Python 3.10 o superior
-- Django (versión fijada en `requirements.txt`; no hay otras dependencias)
-- Base de datos SQLite (se crea con `migrate`, no requiere instalación)
+- Christian Alvarez – alvarezchristiandaniel-creator
+- Yorel Díaz – iamYorel
+- Jackson Almazo – jackjavier-23
 
-## Instalación y ejecución
+## Tecnologías
 
-Abrir una terminal en la carpeta que contiene `manage.py` y ejecutar:
+- Django 6.1.2 (Python 3.10 o superior), base de datos SQLite
+- Bootstrap 5.3.3 y Bootstrap Icons 1.11.3 como framework de CSS, **incluidos
+  por CDN** (jsDelivr) en `templates/base.html`; no se instala nada con pip.
+  Requiere conexión a internet para ver los estilos.
+- Paleta de colores propia en `static/css/inventario.css`: azul marino
+  (identidad), azul acero (enlaces), ámbar (acento) y verde azulado / coral
+  para entradas y salidas.
 
-```bash
-python -m venv venv
-venv\Scripts\activate            # Windows
-source venv/bin/activate         # Mac / Linux
+## Tablas principales
 
-pip install -r requirements.txt
-python manage.py migrate         # aplica las migraciones
-python manage.py crear_roles     # crea los grupos de usuarios (ver "Actores")
-python manage.py createsuperuser # crea tu usuario administrador
-python manage.py cargar_datos_prueba   # opcional: carga los datos de ejemplo
-python manage.py runserver
-```
+| Tabla | Descripción |
+| --- | --- |
+| `tbl_almacen` | Bodegas de la empresa |
+| `tbl_ubicacion` | Estante dentro de un almacén (entidad débil de almacén) |
+| `tbl_categoria` | Categorías de artículos |
+| `tbl_articulo` | Productos que se manejan; `art_usa_lote` indica si se manejan por lotes o solo por cantidad |
+| `tbl_lote` | Lote de un artículo, ubicado en un estante (entidad débil de artículo) |
+| `tbl_movimiento` | Entradas y salidas de inventario |
+| `tbl_detalle_movimiento` | Tabla intermedia N:M movimiento–lote, con la cantidad |
 
-Después abrir <http://127.0.0.1:8000/admin/> e iniciar sesión.
-
-- `cargar_datos_prueba` se puede ejecutar varias veces sin duplicar registros y
-  no borra nada. Carga los datos de `docs/datos_de_prueba.md` (3 registros por
-  tabla). También se pueden ingresar a mano desde el admin siguiendo ese mismo
-  documento.
-- Si se prefiere, la clave y el modo de depuración se configuran con las
-  variables de entorno `DJANGO_SECRET_KEY`, `DJANGO_DEBUG` (`0` para
-  desactivarlo) y `DJANGO_ALLOWED_HOSTS`. Por defecto el proyecto está
-  preparado para uso local de desarrollo.
-
-### Credenciales de prueba
-
-El repositorio no contiene contraseñas: cada persona crea su superusuario con
-`createsuperuser`. Los usuarios de cada rol los crea el administrador desde
-**Autenticación y autorización → Usuarios**, marcando "Es staff" y eligiendo su
-grupo.
-
-Superusuario de prueba para la revisión: usuario `admin` (la contraseña se
-definió localmente y no se publica por seguridad; si clonas el repo, crea el
-tuyo con `createsuperuser`).
-
-## Modelo de datos
-
-Siete tablas, una app de Django por cada una:
-
-| App | Tabla | Descripción |
-|---|---|---|
-| `almacenes` | `tbl_almacen` | Bodegas de la empresa |
-| `ubicaciones` | `tbl_ubicacion` | Estante dentro de un almacén (entidad débil de almacén) |
-| `categorias` | `tbl_categoria` | Categorías de artículos |
-| `articulos` | `tbl_articulo` | Productos que se manejan |
-| `lotes` | `tbl_lote` | Lote de un artículo, ubicado en un estante (entidad débil de artículo) |
-| `movimientos` | `tbl_movimiento` | Entradas y salidas de inventario |
-| `detalles_movimiento` | `tbl_detalle_movimiento` | Tabla intermedia N:M movimiento–lote, con la cantidad |
+Una app de Django por cada tabla (`almacenes`, `ubicaciones`, `categorias`,
+`articulos`, `lotes`, `movimientos`, `detalles_movimiento`) más la app `inicio`
+(panel de inicio e inicio de sesión).
 
 Relaciones: almacén 1:N ubicación · categoría 1:N artículo · artículo 1:N lote ·
 ubicación 1:N lote · movimiento N:M lote (por `DetalleMovimiento`).
 
-Diagramas en `docs/`: `diagrama_actores.png` (casos de uso) y
-`diagrama_er.png` (entidad-relación).
+**Artículos sin lotes:** si `art_usa_lote` es falso, el artículo se cuenta solo
+por cantidad. Por convención se le registra un único lote (por ejemplo,
+"SIN-LOTE"), de modo que todo movimiento siga apuntando a un lote y el stock
+se calcule igual.
+
+## Diagramas
+
+- Actores: docs/diagrama_actores.png
+- Entidad-relación: docs/diagrama_er.png
+
+## Funcionalidades
+
+**Proceso con CRUD completo: movimientos de inventario** (tablas
+`tbl_movimiento` + `tbl_detalle_movimiento` + `tbl_lote`). Un movimiento se
+registra con fecha, tipo y varias líneas (lote + cantidad).
+
+| Acción | Ruta | Permiso de Django |
+| --- | --- | --- |
+| Listar (filtro por tipo, búsqueda, paginación) | `/movimientos/` | `view_movimiento` |
+| Crear | `/movimientos/nuevo/` | `add_movimiento` |
+| Detalle | `/movimientos/<id>/` | `view_movimiento` |
+| Editar | `/movimientos/<id>/editar/` | `change_movimiento` |
+| Eliminar (con confirmación) | `/movimientos/<id>/eliminar/` | `delete_movimiento` |
+
+Funcionalidades adicionales:
+
+- Inicio y cierre de sesión (`/ingresar/`, `/salir/`).
+- Roles y permisos: cada rol ve y hace solo lo que le corresponde. Las rutas
+  están protegidas con `LoginRequiredMixin` y `PermissionRequiredMixin`; sin
+  sesión se redirige al login y sin permiso se muestra una página 403.
+- Panel de inicio (`/`) con totales, stock actual por lote y últimos movimientos.
+- Validaciones con mensajes de error y de confirmación: stock insuficiente,
+  cantidades mayores que cero, lote repetido en un movimiento.
+- El panel de administración (`/admin/`) sigue funcionando como en el segundo corte.
+
+## Cómo ejecutar el proyecto
+
+1. git clone https://github.com/iamYorel/inventario.git
+2. python -m venv venv
+3. venv\Scripts\activate   (Linux/macOS: source venv/bin/activate)
+4. pip install -r requirements.txt
+5. python manage.py migrate
+6. python manage.py runserver
+
+El repositorio incluye `db.sqlite3` con datos de prueba y usuarios ya creados,
+así que basta con esos pasos y abrir <http://127.0.0.1:8000/>.
+
+Para empezar con una base de datos vacía: borrar `db.sqlite3`, ejecutar
+`migrate`, `crear_roles`, `cargar_datos_prueba` y `crear_usuarios_prueba` (o
+`createsuperuser` para tu propio administrador).
+
+## Usuarios de prueba
+
+Clave de todos: `Inventario2026*` (solo para demostración).
+
+| Usuario | Rol | Qué puede hacer en la interfaz |
+| --- | --- | --- |
+| `admin` | Superusuario del admin | Todo: CRUD completo de movimientos y panel de administración |
+| `administrador` | Administrador | Consultar movimientos y stock; gestiona almacenes, categorías y usuarios en el admin |
+| `jefe` | Jefe de bodega | Consultar movimientos y stock; gestiona artículos, ubicaciones y lotes en el admin |
+| `bodeguero` | Bodeguero | Consultar y **registrar** entradas y salidas |
+
+Editar y eliminar movimientos exige permisos que ningún rol operativo tiene
+(los movimientos son el historial: las correcciones normales se hacen con un
+movimiento contrario); se hacen con `admin`.
+
+## Modelo de datos y reglas del inventario
 
 ## Cómo funciona el inventario
 
@@ -139,18 +180,24 @@ python manage.py test
 Cubren: restricciones y relaciones de cada modelo, cálculo del stock (lote,
 artículo y almacén), rechazo de salidas sin existencias y de cantidades
 inválidas, reglas de integridad al editar o borrar, carga de los datos de
-prueba (stock esperado 70, 40 y 15) y permisos de los tres roles.
+prueba (stock esperado 70, 40 y 15), permisos de los tres roles en el admin y
+el CRUD de movimientos desde la interfaz (acceso, listar, crear, editar,
+eliminar y validaciones).
 
 ## Estructura
 
 ```
 inventario/
 ├── config/                 # settings.py, urls.py
-├── almacenes/  ubicaciones/  categorias/  articulos/
-├── lotes/  movimientos/
-├── detalles_movimiento/    # modelo, cálculo del stock (stock.py) y
-│                           # comandos crear_roles / cargar_datos_prueba
+├── almacenes/  ubicaciones/  categorias/  articulos/  lotes/
+├── movimientos/            # modelo, formularios, vistas y urls.py del CRUD
+├── detalles_movimiento/    # modelo, cálculo del stock (stock.py) y comandos
+│                           # crear_roles / cargar_datos_prueba / crear_usuarios_prueba
+├── inicio/                 # panel de inicio, login y logout
+├── templates/              # base.html + plantillas por app (inicio/, movimientos/)
+├── static/css/             # paleta de colores (inventario.css)
 ├── docs/                   # diagramas y datos de prueba
+├── db.sqlite3              # base de datos con datos de prueba
 ├── manage.py
 ├── requirements.txt
 └── README.md

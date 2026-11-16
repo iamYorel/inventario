@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% block titulo %}{{ titulo }}{% endblock %}
+{% block contenido %}
+<nav aria-label="breadcrumb"><ol class="breadcrumb">
+  <li class="breadcrumb-item"><a href="{% url 'movimientos:lista' %}">Movimientos</a></li>
+  <li class="breadcrumb-item active">{% if movimiento %}Editar #{{ movimiento.pk_mov_id }}{% else %}Nuevo{% endif %}</li>
+</ol></nav>
+<h1 class="h3 titulo-pagina mb-3">{{ titulo }}{% if movimiento %} #{{ movimiento.pk_mov_id }}{% endif %}</h1>
+
+<form method="post" novalidate>
+  {% csrf_token %}
+  {{ formset.management_form }}
+
+  <div class="card mb-4">
+    <div class="card-header">Datos del movimiento</div>
+    <div class="card-body">
+      {% for e in form.non_field_errors %}<div class="alert alert-danger py-2">{{ e }}</div>{% endfor %}
+      <div class="row g-3">
+        <div class="col-md-3">
+          <label class="form-label" for="{{ form.mov_fecha.id_for_label }}">{{ form.mov_fecha.label }}</label>
+          {{ form.mov_fecha }}
+          {% for e in form.mov_fecha.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="{{ form.mov_tipo.id_for_label }}">{{ form.mov_tipo.label }}</label>
+          {{ form.mov_tipo }}
+          {% for e in form.mov_tipo.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+          {% if form.mov_tipo.help_text %}<div class="form-text">{{ form.mov_tipo.help_text }}</div>{% endif %}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="{{ form.mov_observacion.id_for_label }}">{{ form.mov_observacion.label }}</label>
+          {{ form.mov_observacion }}
+          {% for e in form.mov_observacion.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      Lotes y cantidades
+      <button type="button" id="agregar-linea" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg me-1"></i>Agregar lote</button>
+    </div>
+    <div class="card-body">
+      {% for e in formset.non_form_errors %}<div class="alert alert-danger py-2">{{ e }}</div>{% endfor %}
+      <div class="table-responsive">
+        <table class="table align-middle mb-0">
+          <thead><tr><th>Lote (con su stock disponible)</th><th>Cantidad</th><th></th></tr></thead>
+          <tbody id="lineas">
+            {% for f in formset %}{% include 'movimientos/_linea.html' with f=f %}{% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="form-text mt-2">Una sola línea por lote. En una salida, la cantidad no puede superar el stock del lote.</div>
+    </div>
+  </div>
+
+  <template id="linea-vacia">{% include 'movimientos/_linea.html' with f=formset.empty_form %}</template>
+
+  <div class="d-flex gap-2">
+    <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Guardar</button>
+    <a href="{% if movimiento %}{% url 'movimientos:detalle' movimiento.pk_mov_id %}{% else %}{% url 'movimientos:lista' %}{% endif %}" class="btn btn-outline-secondary">Cancelar</a>
+  </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Agregar y quitar líneas del formset sin recargar la página
+  const total = document.getElementById('id_detalles-TOTAL_FORMS');
+  const cuerpo = document.getElementById('lineas');
+  const plantilla = document.getElementById('linea-vacia').innerHTML;
+
+  document.getElementById('agregar-linea').addEventListener('click', () => {
+    cuerpo.insertAdjacentHTML('beforeend', plantilla.replace(/__prefix__/g, total.value));
+    total.value = parseInt(total.value) + 1;
+  });
+
+  cuerpo.addEventListener('click', (e) => {
+    const boton = e.target.closest('.btn-quitar');
+    if (!boton) return;
+    const fila = boton.closest('tr');
+    fila.querySelector('input[type=checkbox][name$="-DELETE"]').checked = true;  // Django la borra al guardar
+    fila.classList.add('d-none');
+  });
+</script>
+{% endblock %}

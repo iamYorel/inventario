@@ -11,6 +11,12 @@ class Articulo(models.Model):
     art_codigo = models.CharField(max_length=30, unique=True)
     art_nombre = models.CharField(max_length=100)
     art_unidad = models.CharField(max_length=20)
+    # True: el artículo se maneja por lotes con varios lotes. False: se cuenta
+    # solo por cantidad y se le registra un único lote (p. ej. 'SIN-LOTE'), de
+    # modo que todo movimiento siga apuntando a un lote.
+    art_usa_lote = models.BooleanField(
+        'se maneja por lotes', default=True,
+        help_text='Desmarcar si el artículo solo se cuenta por cantidad.')
 
     class Meta:
         db_table = 'tbl_articulo'

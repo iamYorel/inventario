@@ -1,0 +1,16 @@
+<tr class="linea {% if f.DELETE.value %}d-none{% endif %}">
+  <td>
+    {% for oculto in f.hidden_fields %}{{ oculto }}{% endfor %}
+    {{ f.fk_lot }}
+    {% for e in f.fk_lot.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+    {% for e in f.non_field_errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+  </td>
+  <td style="width: 180px;">
+    {{ f.det_cantidad }}
+    {% for e in f.det_cantidad.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+  </td>
+  <td class="text-end" style="width: 60px;">
+    <span class="d-none">{{ f.DELETE }}</span>
+    <button type="button" class="btn btn-sm btn-outline-danger btn-quitar" title="Quitar línea"><i class="bi bi-x-lg"></i></button>
+  </td>
+</tr>

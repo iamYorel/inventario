@@ -12,9 +12,9 @@ class LoteInline(admin.TabularInline):
 
 @admin.register(Articulo)
 class ArticuloAdmin(admin.ModelAdmin):
-    list_display = ('art_codigo', 'art_nombre', 'fk_cat', 'art_unidad', 'stock_total')
+    list_display = ('art_codigo', 'art_nombre', 'fk_cat', 'art_unidad', 'art_usa_lote', 'stock_total')
     search_fields = ('art_codigo', 'art_nombre', 'fk_cat__cat_nombre')
-    list_filter = ('fk_cat', 'art_unidad')
+    list_filter = ('fk_cat', 'art_unidad', 'art_usa_lote')
     inlines = [LoteInline]
     readonly_fields = ('stock_total', 'stock_en_almacenes')
 
